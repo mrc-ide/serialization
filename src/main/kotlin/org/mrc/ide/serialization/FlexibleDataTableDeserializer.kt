@@ -7,8 +7,9 @@ class FlexibleDataTableDeserializer<out T>(
         headers: List<HeaderDefinition>,
         constructor: KFunction<T>,
         private val flexibleType: KType,
-        allColumnsRequired: Boolean
-) : DataTableDeserializer<T>(headers, constructor, allColumnsRequired)
+        allColumnsRequired: Boolean,
+        deserializer: Deserializer
+) : DataTableDeserializer<T>(headers, constructor, allColumnsRequired, deserializer)
 {
     override val extraHeadersAllowed = true
 
