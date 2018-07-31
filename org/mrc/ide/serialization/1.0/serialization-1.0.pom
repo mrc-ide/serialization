@@ -5,6 +5,15 @@
   <groupId>org.mrc.ide</groupId>
   <artifactId>serialization</artifactId>
   <version>1.0</version>
+  <name>Serialization</name>
+  <description>CSV/Data-table serialiation</description>
+  <url>https://github.com/mrc-ide/serialization</url>
+  <licenses>
+    <license>
+      <name>MIT</name>
+      <url>https://github.com/mrc-ide/serialization/blob/master/LICENSE</url>
+    </license>
+  </licenses>
   <dependencies>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
