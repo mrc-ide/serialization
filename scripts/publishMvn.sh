@@ -9,11 +9,13 @@ if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]] && echo "*" = "*"
     exit 1
 fi
 
+echo "-------------------------------------------"
 echo 'Creating maven artifacts'
 ./gradlew publish
 
 git add .
 git commit -m "publish"
 
+echo "-------------------------------------------"
 echo 'Pushing to mvn-repo'
 git subtree push --prefix repo origin mvn-repo
