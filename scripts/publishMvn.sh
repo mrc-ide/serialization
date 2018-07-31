@@ -6,6 +6,7 @@ function git_dirty {
 
 if [[ $(git diff --shortstat 2> /dev/null | tail -n1) != "" ]] && echo "*" = "*"; then
     echo "git not clean, commit changes first"
+    exit 1
 fi
 
 echo 'Creating maven artifacts'
