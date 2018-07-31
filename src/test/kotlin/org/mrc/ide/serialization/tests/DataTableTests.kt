@@ -12,7 +12,7 @@ import org.mrc.ide.serialization.models.AllColumnsRequired
 import org.mrc.ide.serialization.models.FlexibleProperty
 import org.mrc.ide.serialization.validation.ValidationException
 
-enum class TestEnum {  IN_PREPARATION,
+enum class TestEnum { IN_PREPARATION,
     OPEN,
     FINISHED
 }
@@ -31,7 +31,7 @@ class DataTableTests {
 
     @Test
     fun `headers are written in order of constructor`() {
-        val table = DataTable.new<ABC>(emptySequence())
+        val table = DataTable.new<ABC>(emptySequence(), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""a,b,c""")
     }
 
@@ -40,7 +40,7 @@ class DataTableTests {
         val table = DataTable.new(sequenceOf(
                 ABC("g", "h", "i"),
                 ABC("x", "y", "z")
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""a,b,c
 g,h,i
 x,y,z""")
@@ -52,7 +52,7 @@ x,y,z""")
                 ABC("g", "h", "i"),
                 ABC("x", "y", "z"),
                 ABC("with, commas", """with "quotes" and no commas""", """both "quotes" and ,commas,""")
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""a,b,c
 g,h,i
 x,y,z
@@ -63,7 +63,7 @@ x,y,z
     fun `mixed types are written out`() {
         val table = DataTable.new(sequenceOf(
                 MixedTypes("text", 123, 3.1415F)
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""text,int,dec
 text,123,3.1415""")
     }
@@ -72,7 +72,7 @@ text,123,3.1415""")
     fun `null is converted to NA`() {
         val table = DataTable.new(sequenceOf(
                 MixedTypes(null, null, null)
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""text,int,dec
 <NA>,<NA>,<NA>""")
     }
@@ -81,7 +81,7 @@ text,123,3.1415""")
     fun `enum is converted to lowercase with hyphens`() {
         val table = DataTable.new(sequenceOf(
                 WithEnums("free text", TestEnum.IN_PREPARATION)
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""text,enum
 free text,in-preparation""")
     }
@@ -291,7 +291,7 @@ free text,in-preparation""")
 
     @AllColumnsRequired
     @FlexibleColumns
-    data class ModelRun(val runId: String,  @FlexibleProperty val parameterValues: Map<String, String>)
+    data class ModelRun(val runId: String, @FlexibleProperty val parameterValues: Map<String, String>)
 
     @Test
     fun `error if empty values when all columns required`() {
@@ -319,7 +319,7 @@ free text,in-preparation""")
     }
 
     private fun serialize(table: DataTable<*>) = serializeToStreamAndGetAsString {
-        table.serialize(it, DefaultSerializer.instance)
+        table.serialize(it)
     }.trim()
 
     private fun checkValidationError(code: String, message: String? = null, body: () -> Any?) {

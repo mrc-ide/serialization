@@ -11,4 +11,5 @@ interface Serializer
     fun serializeEnum(value: Any): String
     fun serializeValueForCSV(value: Any?): String
     val gson: Gson
+    val serializeNullsTo: String
 }

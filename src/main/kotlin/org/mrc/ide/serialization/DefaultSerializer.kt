@@ -15,9 +15,10 @@ open class DefaultSerializer : Serializer {
         JsonPrimitive(it.src.toString())
     }
 
+    override val serializeNullsTo: String = "<NA>"
+
     companion object {
         val instance: Serializer = DefaultSerializer()
-        const val noValue = "<NA>"
     }
 
     override val gson: Gson = GsonBuilder()
@@ -51,7 +52,7 @@ open class DefaultSerializer : Serializer {
     }
 
     override fun serializeValueForCSV(value: Any?) = when (value) {
-        null -> noValue
+        null -> serializeNullsTo
         is Enum<*> -> serializeEnum(value)
         else -> value.toString()
     }
