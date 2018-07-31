@@ -7,7 +7,7 @@
   <version>1.0</version>
   <name>Serialization</name>
   <description>CSV/Data-table serialiation</description>
-  <url>https://github.com/mrc-ide/serialization</url>
+  <url>https://github.com/mrc-ide/serialization/tree/mvn-repo/</url>
   <licenses>
     <license>
       <name>MIT</name>
