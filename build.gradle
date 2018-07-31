@@ -19,6 +19,16 @@ plugins {
 
 apply plugin: 'kotlin'
 
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
@@ -28,6 +38,20 @@ publishing {
             version = '1.0'
 
             from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom {
+                name = 'Serialization'
+                description = 'CSV/Data-table serialiation'
+                url = 'https://github.com/mrc-ide/serialization'
+                licenses {
+                    license {
+                        name = 'MIT'
+                        url = 'https://github.com/mrc-ide/serialization/blob/master/LICENSE'
+                    }
+                }
+            }
         }
     }
 
