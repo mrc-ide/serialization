@@ -44,7 +44,7 @@ publishing {
             pom {
                 name = 'Serialization'
                 description = 'CSV/Data-table serialiation'
-                url = 'https://github.com/mrc-ide/serialization'
+                url = 'https://github.com/mrc-ide/serialization/tree/mvn-repo/'
                 licenses {
                     license {
                         name = 'MIT'
