@@ -12,7 +12,32 @@ buildscript {
     }
 }
 
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
 apply plugin: 'kotlin'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+
+            groupId = 'org.mrc.ide'
+            artifactId = 'serialization'
+            version = '1.0'
+
+            from components.java
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'serialization'
+            url = "file://${buildDir}/repo"
+        }
+    }
+}
 
 repositories {
     mavenCentral()
