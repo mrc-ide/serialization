@@ -11,7 +11,7 @@ import java.time.LocalDate
 import java.time.Month
 import java.time.ZoneId
 
-class SerializerTests
+class DefaultSerializerTests
 {
     private val serializer = DefaultSerializer.instance
 

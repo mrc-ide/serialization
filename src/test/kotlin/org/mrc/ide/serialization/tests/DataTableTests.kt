@@ -5,13 +5,14 @@ import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
 import org.mrc.ide.serialization.DataTable
 import org.mrc.ide.serialization.DataTableDeserializer
+import org.mrc.ide.serialization.DefaultDeserializer
 import org.mrc.ide.serialization.DefaultSerializer
 import org.mrc.ide.serialization.models.FlexibleColumns
 import org.mrc.ide.serialization.models.AllColumnsRequired
 import org.mrc.ide.serialization.models.FlexibleProperty
 import org.mrc.ide.serialization.validation.ValidationException
 
-enum class TestEnum {  IN_PREPARATION,
+enum class TestEnum { IN_PREPARATION,
     OPEN,
     FINISHED
 }
@@ -30,7 +31,7 @@ class DataTableTests {
 
     @Test
     fun `headers are written in order of constructor`() {
-        val table = DataTable.new<ABC>(emptySequence())
+        val table = DataTable.new<ABC>(emptySequence(), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""a,b,c""")
     }
 
@@ -39,7 +40,7 @@ class DataTableTests {
         val table = DataTable.new(sequenceOf(
                 ABC("g", "h", "i"),
                 ABC("x", "y", "z")
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""a,b,c
 g,h,i
 x,y,z""")
@@ -51,7 +52,7 @@ x,y,z""")
                 ABC("g", "h", "i"),
                 ABC("x", "y", "z"),
                 ABC("with, commas", """with "quotes" and no commas""", """both "quotes" and ,commas,""")
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""a,b,c
 g,h,i
 x,y,z
@@ -62,7 +63,7 @@ x,y,z
     fun `mixed types are written out`() {
         val table = DataTable.new(sequenceOf(
                 MixedTypes("text", 123, 3.1415F)
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""text,int,dec
 text,123,3.1415""")
     }
@@ -71,7 +72,7 @@ text,123,3.1415""")
     fun `null is converted to NA`() {
         val table = DataTable.new(sequenceOf(
                 MixedTypes(null, null, null)
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""text,int,dec
 <NA>,<NA>,<NA>""")
     }
@@ -80,7 +81,7 @@ text,123,3.1415""")
     fun `enum is converted to lowercase with hyphens`() {
         val table = DataTable.new(sequenceOf(
                 WithEnums("free text", TestEnum.IN_PREPARATION)
-        ))
+        ), DefaultSerializer.instance)
         assertThat(serialize(table)).isEqualTo("""text,enum
 free text,in-preparation""")
     }
@@ -92,7 +93,8 @@ free text,in-preparation""")
             'text','int','dec'
             'joe',1,6.53
             'bob',2,2.0"""
-        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance,
+                DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 MixedTypes("joe", 1, 6.53F),
                 MixedTypes("bob", 2, 2.0F)
@@ -105,7 +107,8 @@ free text,in-preparation""")
             "text","int","dec"
             "joe",1,6.53
             "bob",2,2.0"""
-        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance,
+                DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 MixedTypes("joe", 1, 6.53F),
                 MixedTypes("bob", 2, 2.0F)
@@ -118,7 +121,7 @@ free text,in-preparation""")
             text,int,dec
             joe,1,6.53
             bob,2,2.0"""
-        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 MixedTypes("joe", 1, 6.53F),
                 MixedTypes("bob", 2, 2.0F)
@@ -129,7 +132,7 @@ free text,in-preparation""")
     fun `empty CSV data causes an exception`() {
         val csv = ""
         assertThatThrownBy {
-            DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }.matches {
             val error = (it as ValidationException).errors.single()
             error.code == "csv-empty"
@@ -142,7 +145,7 @@ free text,in-preparation""")
             Text,Int,dec
             "joe",1,6.53
             "bob",2,2.0"""
-        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 MixedTypes("joe", 1, 6.53F),
                 MixedTypes("bob", 2, 2.0F)
@@ -155,7 +158,7 @@ free text,in-preparation""")
             a,b,c,d
             1,2,3,4"""
         checkValidationError("csv-unexpected-header") {
-            DataTableDeserializer.deserialize(csv, ABC::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, ABC::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -166,7 +169,7 @@ free text,in-preparation""")
             1,2,3
             1,2,3,4"""
         checkValidationError("csv-wrong-row-length:2") {
-            DataTableDeserializer.deserialize(csv, ABC::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, ABC::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -177,7 +180,7 @@ free text,in-preparation""")
             1,2,3
             1,2"""
         checkValidationError("csv-wrong-row-length:2") {
-            DataTableDeserializer.deserialize(csv, ABC::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, ABC::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -188,7 +191,7 @@ free text,in-preparation""")
             "joe",1,3.14
             "sam",2.6,1"""
         checkValidationError("csv-bad-data-type:2:int", "Unable to parse '2.6' as Int? (Row 2, column int)") {
-            DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, MixedTypes::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -199,7 +202,7 @@ free text,in-preparation""")
             "x",5
             "y",NA"""
         checkValidationError("csv-bad-data-type:2:int", "Unable to parse 'NA' as Int (Row 2, column int)") {
-            DataTableDeserializer.deserialize(csv, SomeRequiredColumns::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, SomeRequiredColumns::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -209,7 +212,7 @@ free text,in-preparation""")
             'a','b','x','y','z'
             1,"joe",1,2,3
             2,"bob",4,5,6"""
-        val rows = DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 Flexible(1, "joe", mapOf("x" to 1, "y" to 2, "z" to 3)),
                 Flexible(2, "bob", mapOf("x" to 4, "y" to 5, "z" to 6))
@@ -222,7 +225,7 @@ free text,in-preparation""")
             "a","b","x","y","z"
             1,"joe",1,2,3
             2,"bob",4,5,6"""
-        val rows = DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 Flexible(1, "joe", mapOf("x" to 1, "y" to 2, "z" to 3)),
                 Flexible(2, "bob", mapOf("x" to 4, "y" to 5, "z" to 6))
@@ -235,7 +238,7 @@ free text,in-preparation""")
             a,b,x,y,z
             1,"joe",1,2,3
             2,"bob",4,5,6"""
-        val rows = DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+        val rows = DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         assertThat(rows).containsExactlyElementsOf(listOf(
                 Flexible(1, "joe", mapOf("x" to 1, "y" to 2, "z" to 3)),
                 Flexible(2, "bob", mapOf("x" to 4, "y" to 5, "z" to 6))
@@ -249,7 +252,7 @@ free text,in-preparation""")
             1,2,3
             3,4,5"""
         checkValidationError("csv-unexpected-header") {
-            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -260,7 +263,7 @@ free text,in-preparation""")
             0,"p",1,2,3
             0,"q",1,2"""
         checkValidationError("csv-wrong-row-length:2") {
-            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -271,7 +274,7 @@ free text,in-preparation""")
             0,"p",1,2,3
             0,"q",1,2,3,4"""
         checkValidationError("csv-wrong-row-length:2") {
-            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -282,13 +285,13 @@ free text,in-preparation""")
             0,"p",1,2,3
             0,"q",1,2,3.5"""
         checkValidationError("csv-bad-data-type:2:z") {
-            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, Flexible::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
     @AllColumnsRequired
     @FlexibleColumns
-    data class ModelRun(val runId: String,  @FlexibleProperty val parameterValues: Map<String, String>)
+    data class ModelRun(val runId: String, @FlexibleProperty val parameterValues: Map<String, String>)
 
     @Test
     fun `error if empty values when all columns required`() {
@@ -297,7 +300,7 @@ free text,in-preparation""")
             1,14,15.2,4
             2,14,15.3,"""
         checkValidationError("csv-missing-data:2:p3") {
-            DataTableDeserializer.deserialize(csv, ModelRun::class, DefaultSerializer.instance).toList()
+            DataTableDeserializer.deserialize(csv, ModelRun::class, DefaultSerializer.instance, DefaultDeserializer.instance).toList()
         }
     }
 
@@ -309,13 +312,14 @@ free text,in-preparation""")
             2,14,15.3,"""
 
         val result =
-                DataTableDeserializer.deserialize(csv, FlexibleWithStrings::class, DefaultSerializer.instance).toList()
+                DataTableDeserializer.deserialize(csv, FlexibleWithStrings::class, DefaultSerializer.instance,
+                        DefaultDeserializer.instance).toList()
 
         assertThat(result.last().extra["y"]).isEmpty()
     }
 
     private fun serialize(table: DataTable<*>) = serializeToStreamAndGetAsString {
-        table.serialize(it, DefaultSerializer.instance)
+        table.serialize(it)
     }.trim()
 
     private fun checkValidationError(code: String, message: String? = null, body: () -> Any?) {

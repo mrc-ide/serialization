@@ -18,7 +18,8 @@ class HeaderDefinition(val name: String, val type: KType)
 open class DataTableDeserializer<out T>(
         protected val headerDefinitions: List<HeaderDefinition>,
         private val constructor: KFunction<T>,
-        private val allColumnsRequired: Boolean = false
+        private val allColumnsRequired: Boolean = false,
+        private val deserializer: Deserializer
 )
 {
     private val headerCount = headerDefinitions.size
@@ -57,7 +58,8 @@ open class DataTableDeserializer<out T>(
         if (row.size != actualHeaders.size)
         {
             val oneIndexedRow = rowIndex + 1
-            problems.add(ErrorInfo("csv-wrong-row-length:$oneIndexedRow", "Row $oneIndexedRow has a different number of columns from the header row"))
+            problems.add(ErrorInfo("csv-wrong-row-length:$oneIndexedRow",
+                    "Row $oneIndexedRow has a different number of columns from the header row"))
         }
         val values = row.zip(actualHeaders).map { (raw, header) ->
             deserialize(raw, header.type, rowIndex, header.name, problems)
@@ -83,7 +85,7 @@ open class DataTableDeserializer<out T>(
 
         return try
         {
-            val value = Deserializer().deserialize(trimmed, targetType)
+            val value = deserializer.deserialize(trimmed, targetType)
             value
         }
         catch (e: Exception)
@@ -131,18 +133,21 @@ open class DataTableDeserializer<out T>(
             if (actual == null)
             {
                 // at most one of actual and expected can be null, so we can infer here that expected is not null
-                problems.add(ErrorInfo("csv-missing-header", "Not enough column headers were provided. Expected a '${expected!!.name}' header."))
+                problems.add(ErrorInfo("csv-missing-header",
+                        "Not enough column headers were provided. Expected a '${expected!!.name}' header."))
             }
             else if (expected == null)
             {
                 if (!extraHeadersAllowed)
                 {
-                    problems.add(ErrorInfo("csv-unexpected-header", "Too many column headers were provided. Unexpected '$actual' header."))
+                    problems.add(ErrorInfo("csv-unexpected-header",
+                            "Too many column headers were provided. Unexpected '$actual' header."))
                 }
             }
             else if (!actual.equals(expected.name, ignoreCase = true))
             {
-                problems.add(ErrorInfo("csv-unexpected-header", "Expected column header '${expected.name}'; found '$actual' instead (column $index)"))
+                problems.add(ErrorInfo("csv-unexpected-header",
+                        "Expected column header '${expected.name}'; found '$actual' instead (column $index)"))
             }
 
             index += 1
@@ -174,22 +179,26 @@ open class DataTableDeserializer<out T>(
         fun <T : Any> deserialize(
                 body: Reader,
                 type: KClass<T>,
-                serializer: Serializer
+                serializer: Serializer,
+                deserializer: Deserializer
         ): Sequence<T>
         {
-            return getDeserializer(type, serializer).deserialize(body)
+            return getDeserializer(type, serializer, deserializer).deserialize(body)
         }
 
         fun <T : Any> deserialize(
                 body: String,
                 type: KClass<T>,
-                serializer: Serializer
+                serializer: Serializer,
+                deserializer: Deserializer
         ): Sequence<T>
         {
-            return deserialize(StringReader(body), type, serializer)
+            return deserialize(StringReader(body), type, serializer, deserializer)
         }
 
-        private fun <T : Any> getDeserializer(type: KClass<T>, serializer: Serializer): DataTableDeserializer<T>
+        private fun <T : Any> getDeserializer(type: KClass<T>,
+                                              serializer: Serializer,
+                                              deserializer: Deserializer): DataTableDeserializer<T>
         {
             val constructor = type.primaryConstructor
                     ?: throw Exception("Cannot deserialize to type ${type.simpleName} - it has no primary constructor")
@@ -200,11 +209,12 @@ open class DataTableDeserializer<out T>(
             return if (type.findAnnotation<FlexibleColumns>() != null)
             {
                 val flexibleType = getFlexibleColumnType(constructor, type)
-                FlexibleDataTableDeserializer(headers.dropLast(1), constructor, flexibleType, allColumnsRequired)
+                FlexibleDataTableDeserializer(headers.dropLast(1), constructor, flexibleType, allColumnsRequired,
+                        deserializer)
             }
             else
             {
-                DataTableDeserializer(headers, constructor, allColumnsRequired)
+                DataTableDeserializer(headers, constructor, allColumnsRequired, deserializer)
             }
         }
 
